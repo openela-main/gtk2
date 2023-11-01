@@ -1,0 +1,122 @@
+Add compatibility with Python 3 (keeping compatibility with Python 2.7)
+
+--- gtk+-2.24.32/gtk/gtk-builder-convert       (original)
++++ gtk+-2.24.32/gtk/gtk-builder-convert       (refactored)
+@@ -36,10 +36,11 @@
+ 
+ Report bugs to http://bugzilla.gnome.org/."""
+ 
++from __future__ import print_function
+ import getopt
+ import os
+ import sys
+-
++import subprocess
+ from xml.dom import minidom, Node
+ 
+ DIALOGS = ['GtkDialog',
+@@ -47,13 +48,6 @@
+            'GtkMessageDialog']
+ WINDOWS = ['GtkWindow'] + DIALOGS
+ 
+-# The subprocess is only available in Python 2.4+
+-try:
+-    import subprocess
+-    subprocess # pyflakes
+-except ImportError:
+-    subprocess = None
+-
+ def get_child_nodes(node):
+     assert node.tagName == 'object'
+     nodes = []
+@@ -167,7 +161,11 @@
+ 
+     def to_xml(self):
+         xml = self._dom.toprettyxml("", "")
+-        return xml.encode('utf-8')
++        if sys.version_info < (3, 0):
++            # Python 2: convert with explicit encoding
++            # (For Python 3, the result is left as text)
++            xml = xml.encode('utf-8')
++        return xml
+ 
+     #
+     # Private
+@@ -259,7 +257,7 @@
+         for node in objects:
+             self._convert(node.getAttribute("class"), node)
+             if self._get_object(node.getAttribute('id')) is not None:
+-		print "WARNING: duplicate id \"" + node.getAttribute('id') + "\""
++                print("WARNING: duplicate id \"" + node.getAttribute('id') + "\"")
+             self.objects[node.getAttribute('id')] = node
+ 
+         # Convert Gazpachos UI tag
+@@ -272,13 +270,9 @@
+ 
+         # Output the newly created root objects and sort them
+         # by attribute id
+-        # FIXME: Use sorted(self.root_objects,
+-        #                   key=lambda n: n.getAttribute('id'),
+-        #                   reverse=True):
+-        # when we can depend on python 2.4 or higher
+-        root_objects = self.root_objects[:]
+-        root_objects.sort(lambda a, b: cmp(b.getAttribute('id'),
+-                                           a.getAttribute('id')))
++        root_objects = sorted(self.root_objects,
++                              key=lambda n: n.getAttribute('id'),
++                              reverse=True)
+         for obj in root_objects:
+             self._interface.childNodes.insert(0, obj)
+ 
+@@ -461,8 +455,8 @@
+             if signal_name in ['activate', 'toggled']:
+                 action.appendChild(signal)
+             else:
+-                print 'Unhandled signal %s::%s' % (node.getAttribute('class'),
+-                                                   signal_name)
++                print('Unhandled signal %s::%s' % (node.getAttribute('class'),
++                                                   signal_name))
+ 
+         if not uimgr.childNodes:
+             child = self._dom.createElement('child')
+@@ -481,8 +475,8 @@
+         for accelerator in get_accelerator_nodes(node):
+             signal_name = accelerator.getAttribute('signal')
+             if signal_name != 'activate':
+-                print 'Unhandled accelerator signal for %s::%s' % (
+-                    node.getAttribute('class'), signal_name)
++                print('Unhandled accelerator signal for %s::%s' % (
++                    node.getAttribute('class'), signal_name))
+                 continue
+             accelerator.removeAttribute('signal')
+             child.appendChild(accelerator)
+@@ -741,13 +735,14 @@
+ 
+     s = subprocess.Popen([filename, '--format', '-'],
+                          stdin=subprocess.PIPE,
+-                         stdout=subprocess.PIPE)
++                         stdout=subprocess.PIPE,
++                         universal_newlines=True)
+     s.stdin.write(output)
+     s.stdin.close()
+     return s.stdout.read()
+ 
+ def usage():
+-    print __doc__
++    print(__doc__)
+ 
+ def main(args):
+     try:
+@@ -788,10 +783,10 @@
+ 
+     xml = _indent(conv.to_xml())
+     if output_filename == "-":
+-        print xml
++        print(xml)
+     else:
+         open(output_filename, 'w').write(xml)
+-        print "Wrote", output_filename
++        print("Wrote", output_filename)
+ 
+     return 0
+ 
