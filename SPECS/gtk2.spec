@@ -20,7 +20,7 @@
 Summary: GTK+ graphical user interface library
 Name: gtk2
 Version: 2.24.33
-Release: 8%{?dist}
+Release: 9%{?dist}
 License: LGPLv2+
 URL: http://www.gtk.org
 #VCS: git:git://git.gnome.org/gtk+#gtk-2-24
@@ -180,8 +180,8 @@ esac
 
 # autoconf uses powerpc not ppc
 host=`echo $host | sed "s/^ppc/powerpc/"`
-# autoconf uses ibm-linux not redhat-linux (s390x)
-host=`echo $host | sed "s/^s390\(x\)*-redhat/s390\1-ibm/"`
+# autoconf uses ibm-linux not redhat-linux/koji-linux (s390x)
+host=`echo $host | sed "s/^s390\(x\)*-\(redhat\|koji\)/s390\1-ibm/"`
 
 # Make sure that the host value that is passed to the compile
 # is the same as the host that we're using in the spec file
@@ -324,6 +324,10 @@ gtk-query-immodules-2.0-%{__isa_bits} --update-cache
 %doc tmpdocs/examples
 
 %changelog
+* Wed Aug  5 2026 Tomas Popela <tpopela@redhat.com> - 2.24.33-9
+- Update the host handling of s390x on Konflux
+- Resolves: RHEL-192223
+
 * Mon Nov  7 2022 Jens Petersen <petersen@redhat.com> - 2.24.33-8
 - Recommend ibus-gtk2 when ibus is installed (#2066314)
 
